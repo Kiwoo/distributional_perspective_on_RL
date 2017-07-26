@@ -8,6 +8,7 @@ import os
 import collections
 import scipy.signal
 import random
+from misc_util import mkdir_p
 # ================================================================
 # Import all names into common namespace
 # ================================================================
@@ -422,7 +423,8 @@ def load_state(fname):
     saver.restore(get_session(), fname)
 
 def save_state(fname):
-    os.makedirs(os.path.dirname(fname), exist_ok=True)
+    # os.makedirs(os.path.dirname(fname), exist_ok=True)
+    mkdir_p(os.path.dirname(fname))
     saver = tf.train.Saver()
     saver.save(get_session(), fname)
 

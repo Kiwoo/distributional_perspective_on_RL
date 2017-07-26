@@ -11,6 +11,7 @@ import tf_util as U
 from schedules import LinearSchedule
 from build_graph import *
 from replay_buffer import ReplayBuffer, PrioritizedReplayBuffer
+from misc_util import mkdir_p
 
 
 class ActWrapper(object):
@@ -210,6 +211,8 @@ def learn(env,
     with tempfile.TemporaryDirectory() as td:
         model_saved = False
         model_file = os.path.join(td, "model")
+        print model_file
+        # mkdir_p(os.path.dirname(model_file))
         for t in range(max_timesteps):
             if callback is not None:
                 if callback(locals(), globals()):

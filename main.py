@@ -301,23 +301,23 @@ import build_graph
 #         # Note that we fit value function AFTER using it to compute the advantage function to avoid introducing bias
 #         logz.dump_tabular()
 
-def wrap_train(env):
-    from atari_wrappers import (wrap_deepmind, FrameStack)
-    env = wrap_deepmind(env, episode_life = False, clip_rewards=False)
-    env = FrameStack(env, 4)
-    return env
+# def wrap_train(env):
+#     from atari_wrappers_deprecated import wrap_dqn, ScaledFloatFrame
+#     env = wrap_deepmind(env, episode_life = False, clip_rewards=False)
+#     env = FrameStack(env, 4)
+#     return env
 
 
 def main():
-    env = gym.make("PongNoFrameskip-v4")
+    env = gym.make("PongNoFrameskip-v3")
     # Remove Scaled Float Frame wrapper, re-use if needed.
-    env = wrap_train(env)
+    from atari_wrappers_deprecated import wrap_dqn, ScaledFloatFrame
+    env = ScaledFloatFrame(wrap_dqn(env))
     model = cnn_to_mlp(
         convs=[(32, 8, 4), (64, 4, 2), (64, 3, 1)],
         hiddens=[256],
         dueling=True
     )
-    print "Come1"
     act = learn(
         env,
         q_func=model,

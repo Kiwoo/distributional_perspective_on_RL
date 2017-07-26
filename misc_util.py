@@ -7,6 +7,18 @@ import tempfile
 import time
 import zipfile
 
+def mkdir_p(path):
+    try:
+        os.makedirs(path)
+    except:
+        print "MKDIR ERROR"
+        pass
+        #  OSError as exc:  # Python >2.5
+        # if exc.errno == errno.EEXIST and os.path.isdir(path):
+        #     pass
+        # else:
+        #     print "MKDIR ERROR!!!"
+
 def cg(f_Ax, b, cg_iters=10, callback=None, verbose=False, residual_tol=1e-10):
     """
     Demmel p 312
