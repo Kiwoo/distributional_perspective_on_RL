@@ -1,0 +1,9 @@
+*.pyc
+*.swp
+*.mp4
+*.log
+*.p
+*.TXT
+*.pkl
+__pycache__
+
