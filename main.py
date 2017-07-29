@@ -309,18 +309,27 @@ import build_graph
 
 
 def main():
-    env = gym.make("PongNoFrameskip-v3")
+    env = gym.make("PongNoFrameskip-v4")
     # Remove Scaled Float Frame wrapper, re-use if needed.
     from atari_wrappers_deprecated import wrap_dqn, ScaledFloatFrame
     env = ScaledFloatFrame(wrap_dqn(env))
-    model = cnn_to_mlp(
+    # model = cnn_to_mlp(
+    #     convs=[(32, 8, 4), (64, 4, 2), (64, 3, 1)],
+    #     hiddens=[256],
+    #     dueling=True
+    # )
+    num_atoms = 51
+    model = cnn_to_dist(
         convs=[(32, 8, 4), (64, 4, 2), (64, 3, 1)],
         hiddens=[256],
-        dueling=True
+        num_atoms=num_atoms,
+        dueling=False
     )
-    act = learn(
+    act = dist_learn(
         env,
-        q_func=model,
+        q_dist_func=model,
+        num_atoms=num_atoms,
+        V_max=10.0,
         lr=1e-4,
         max_timesteps=2000000,
         buffer_size=10000,
@@ -331,7 +340,21 @@ def main():
         target_network_update_freq=1000,
         gamma=0.99,
         prioritized_replay=False
-    )
+    )    
+    # act = learn(
+    #     env,
+    #     q_func=model,
+    #     lr=1e-4,
+    #     max_timesteps=2000000,
+    #     buffer_size=10000,
+    #     exploration_fraction=0.1,
+    #     exploration_final_eps=0.01,
+    #     train_freq=4,
+    #     learning_starts=10000,
+    #     target_network_update_freq=1000,
+    #     gamma=0.99,
+    #     prioritized_replay=False
+    # )
     act.save("pong_model.pkl")
     env.close()
 
