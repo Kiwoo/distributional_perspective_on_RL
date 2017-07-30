@@ -229,73 +229,78 @@ def build_dist_train(make_obs_ph, dist_func, num_actions, num_atoms, V_max, opti
         done_mask_ph = tf.placeholder(tf.float32, [None], name="done")
         importance_weights_ph = tf.placeholder(tf.float32, [None], name="weight")
 
-        # q network evaluation
-        q_dist_t = dist_func(obs_t_input.get(), num_actions, scope="dist_func", reuse=True)  # reuse parameters from act
-        q_dist_func_vars = U.scope_vars(U.absolute_scope_name("dist_func"))
+        # value distribution network evaluation
+        v_dist_t = dist_func(obs_t_input.get(), num_actions, scope="dist_func", reuse=True)  # reuse parameters from act
+        v_dist_func_vars = U.scope_vars(U.absolute_scope_name("dist_func"))
 
-        # target q network evalution
-        q_dist_tp1 = dist_func(obs_tp1_input.get(), num_actions, scope="target_dist_func")
-        target_q_dist_func_vars = U.scope_vars(U.absolute_scope_name("target_dist_func"))
+        # v_dist_t is p(x_t, a)
+
+        # target value distribution network evalution
+        v_dist_tp1 = dist_func(obs_tp1_input.get(), num_actions, scope="target_dist_func")
+        target_v_dist_func_vars = U.scope_vars(U.absolute_scope_name("target_dist_func"))
+
+        # v_dist_tp1 is p(x_(t+1), a)
 
         # q scores for actions which we know were selected in the given state.
+
+
+        # (0) Calculate p(x_t, a_t)
+        # x_t is given by ob_t_input, and a_t is given by act_t_ph
+
         batch_size = tf.shape(obs_t_input.get())[0]
 
-        # q_a_values = tf.gather(tf.reshape(q_values, [-1]), q_index)
+        v_index1 = tf.range(batch_size) * tf.shape(v_dist_t)[1]
+        v_index1 = tf.tile(tf.reshape(v_index1, [batch_size, 1]), [1, num_atoms])
 
-        q_index1 = tf.range(batch_size) * tf.shape(q_dist_t)[1]
-        q_index1 = tf.tile(tf.reshape(q_index1, [batch_size, 1]), [1, num_atoms])
-        # q_index1 = tf.tile(q_index1, [1, num_atoms])
-        
-        q_index2 = act_t_ph * num_atoms # (3, 5, 7) => (3* 51, 5* 51, 7* 51)
-        q_index2 = tf.tile(tf.reshape(q_index2, [batch_size, 1]), [1, num_atoms])
-        # q_index2 = tf.tile(q_index2, [1, num_atoms])
-        # a = tf.range(num_atoms)
-        q_index2 = q_index2 + tf.range(num_atoms)
-        q_index = q_index1 + q_index2
+        v_index2 = act_t_ph * num_atoms # (3, 5, 7) => (3* 51, 5* 51, 7* 51)
+        v_index2 = tf.tile(tf.reshape(v_index2, [batch_size, 1]), [1, num_atoms])
 
-        q_index = tf.reshape(q_index, [-1])
+        v_index2 = v_index2 + tf.range(num_atoms)
+        v_index = v_index1 + v_index2
 
-        q_dist_t_selected = tf.gather(tf.reshape(q_dist_t, [-1]), q_index)
-        q_dist_t_selected = tf.reshape(q_dist_t_selected, [batch_size, num_atoms])
+        v_index = tf.reshape(v_index, [-1])
+
+        v_dist_t_selected = tf.gather(tf.reshape(q_dist_t, [-1]), q_index)
+        v_dist_t_selected = tf.reshape(q_dist_t_selected, [batch_size, num_atoms])
 
 
-        #  => q_dist_t_selected is p(x_t, a_t)
+        #  => v_dist_t_selected is p(x_t, a_t)
+
+        # (1) Calculate Q(X_(t+1), a)
 
         V_min = -V_max
         delta_z = (V_max - V_min) / (num_atoms - 1)
-        q_tp1 = q_value(q_dist_tp1, num_atoms, num_actions, V_max, delta_z)
-        # print "Target g values"
-        # print np.shape(q_tp1)
-        # q_t_selected = tf.reduce_sum(q_t * tf.one_hot(act_t_ph, num_actions), 1)
+        q_tp1 = q_value(v_dist_tp1, num_atoms, num_actions, V_max, delta_z)
 
-        # compute estimate of best possible value starting from state at t + 1
-        # if double_q:
-        #     q_tp1_using_online_net = dist_func(obs_tp1_input.get(), num_actions, num_atoms, scope="dist_func", reuse=True)
-        #     q_tp1_best_using_online_net = tf.arg_max(q_tp1_using_online_net, 1)
-        #     q_tp1_best = tf.reduce_sum(q_tp1 * tf.one_hot(q_tp1_best_using_online_net, num_actions), 1)
-        # else:
+        # (2) Get argmax_a Q(X_(t+1), a)
+
         q_tp1_best = tf.reduce_max(q_tp1, 1)
         q_tp1_best_act = U.argmax(q_tp1, axis=1)
         q_tp1_best_act = tf.cast(q_tp1_best_act, tf.int32)
 
         # q_tp1_best_act is a* at t+1 step.
-        q_tp_index1 = tf.range(batch_size) * tf.shape(q_dist_tp1)[1]
-        q_tp_index1 = tf.tile(tf.reshape(q_tp_index1, [batch_size, 1]), [1, num_atoms])
+
+        # (3) Extract P(x_(t+1), a*)
+
+        v_tp_index1 = tf.range(batch_size) * tf.shape(v_dist_tp1)[1]
+        v_tp_index1 = tf.tile(tf.reshape(v_tp_index1, [batch_size, 1]), [1, num_atoms])
         
-        q_tp_index2 = q_tp1_best_act * num_atoms # (3, 5, 7) => (3* 51, 5* 51, 7* 51)
-        q_tp_index2 = tf.tile(tf.reshape(q_tp_index2, [batch_size, 1]), [1, num_atoms])        
+        v_tp_index2 = q_tp1_best_act * num_atoms # (3, 5, 7) => (3* 51, 5* 51, 7* 51)
+        v_tp_index2 = tf.tile(tf.reshape(v_tp_index2, [batch_size, 1]), [1, num_atoms])        
 
-        q_tp_index2 = q_tp_index2 + tf.range(num_atoms)
-        q_tp_index = q_tp_index1 + q_tp_index2
+        # Check 1 : tf.range broadcasting
+        v_tp_index2 = v_tp_index2 + tf.range(num_atoms)
+        v_tp_index = v_tp_index1 + v_tp_index2
 
-        q_tp_index = tf.reshape(q_tp_index, [-1])
+        v_tp_index = tf.reshape(v_tp_index, [-1])
 
-        q_dist_tp1_selected = tf.gather(tf.reshape(q_dist_tp1, [-1]), q_tp_index)
-        q_dist_tp1_selected = tf.reshape(q_dist_tp1_selected, [batch_size, num_atoms])
+        v_dist_tp1_selected = tf.gather(tf.reshape(v_dist_tp1, [-1]), v_tp_index)
+        v_dist_tp1_selected = tf.reshape(v_dist_tp1_selected, [batch_size, num_atoms])
 
-        # q_dist_tp1_selected is p(x_(t+1), a*)
+        # v_dist_tp1_selected is P(x_(t+1), a*)
 
-        # z = tf.reshape(tf.range(-V_max, V_max + delta_z, delta_z), [1, num_atoms])
+        # (4) Make T_z, b_j, l, u in matrix form
+
         z = tf.tile(tf.reshape(tf.range(-V_max, V_max + delta_z, delta_z), [1, num_atoms]), [batch_size, 1])
         r = tf.tile(tf.reshape(rew_t_ph, [batch_size, 1]), [1, num_atoms])
 
@@ -303,7 +308,6 @@ def build_dist_train(make_obs_ph, dist_func, num_actions, num_atoms, V_max, opti
 
 
         T_z = r + z * gamma * (1 - done)
-        # T_z = rew_t_ph + gamma * (1.0 - done_mask_ph)
         T_z = tf.maximum(tf.minimum(T_z, V_max), V_min) # Restrict upper and lower value of T_z to V_max and V_min
         b = (T_z - V_min) / delta_z
         l, u = tf.floor(b), tf.ceil(b)
@@ -312,7 +316,7 @@ def build_dist_train(make_obs_ph, dist_func, num_actions, num_atoms, V_max, opti
 
         # u, l are float, l_id, u_id are int32
 
-        q_dist_t_selected = tf.reshape(q_dist_t_selected, [-1])
+        v_dist_t_selected = tf.reshape(v_dist_t_selected, [-1])
         # q_dist_tp1_selected = tf.reshape(q_dist_tp1_selected, [-1])
         add_index = tf.range(batch_size) * num_atoms
 
@@ -322,11 +326,11 @@ def build_dist_train(make_obs_ph, dist_func, num_actions, num_atoms, V_max, opti
             l_index = l_id[:, j] + add_index
             u_index = u_id[:, j] + add_index
 
-            p_tl = tf.gather(q_dist_t_selected, l_index)
-            p_tu = tf.gather(q_dist_t_selected, u_index)
+            p_tl = tf.gather(v_dist_t_selected, l_index)
+            p_tu = tf.gather(v_dist_t_selected, u_index)
             log_p_tl = tf.log(p_tl)
             log_p_tu = tf.log(p_tu)
-            p_tp1 = q_dist_tp1_selected[:,j]
+            p_tp1 = v_dist_tp1_selected[:,j]
             err = err + p_tp1 * ((u[:,j] - b[:,j]) * log_p_tl + (b[:,j] - l[:,j]) * log_p_tu)
 
             # u_index = u_id[:, j]
