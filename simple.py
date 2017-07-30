@@ -86,7 +86,7 @@ def dist_learn(env,
           train_freq=1,
           batch_size=32,
           print_freq=1,
-          checkpoint_freq=10000,
+          checkpoint_freq=2000,
           learning_starts=1000,
           gamma=1.0,
           target_network_update_freq=500,
@@ -280,7 +280,8 @@ def dist_learn(env,
                 # logger.dump_tabular()
 
             if (checkpoint_freq is not None and t > learning_starts and
-                    num_episodes > 100 and t % checkpoint_freq == 0):
+                    t % checkpoint_freq == 0):
+                print "Error: {}".format(td_errors)
                 if saved_mean_reward is None or mean_100ep_reward > saved_mean_reward:
                     if print_freq is not None:
                         print "Saving model due to mean reward increase: {} -> {}".format(

@@ -309,7 +309,7 @@ import build_graph
 
 
 def main():
-    env = gym.make("PongNoFrameskip-v4")
+    env = gym.make("SpaceInvadersNoFrameskip-v4")
     # Remove Scaled Float Frame wrapper, re-use if needed.
     from atari_wrappers_deprecated import wrap_dqn, ScaledFloatFrame
     env = ScaledFloatFrame(wrap_dqn(env))
