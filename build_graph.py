@@ -260,8 +260,8 @@ def build_dist_train(make_obs_ph, dist_func, num_actions, num_atoms, V_max, opti
 
         v_index = tf.reshape(v_index, [-1])
 
-        v_dist_t_selected = tf.gather(tf.reshape(q_dist_t, [-1]), q_index)
-        v_dist_t_selected = tf.reshape(q_dist_t_selected, [batch_size, num_atoms])
+        v_dist_t_selected = tf.gather(tf.reshape(v_dist_t, [-1]), v_index)
+        v_dist_t_selected = tf.reshape(v_dist_t_selected, [batch_size, num_atoms])
 
 
         #  => v_dist_t_selected is p(x_t, a_t)
@@ -366,15 +366,15 @@ def build_dist_train(make_obs_ph, dist_func, num_actions, num_atoms, V_max, opti
         if grad_norm_clipping is not None:
             optimize_expr = U.minimize_and_clip(optimizer,
                                                 weighted_error,
-                                                var_list=q_dist_func_vars,
+                                                var_list=v_dist_func_vars,
                                                 clip_val=grad_norm_clipping)
         else:
-            optimize_expr = optimizer.minimize(weighted_error, var_list=q_dist_func_vars)
+            optimize_expr = optimizer.minimize(weighted_error, var_list=v_dist_func_vars)
 
         # update_target_fn will be called periodically to copy Q network to target Q network
         update_target_expr = []
-        for var, var_target in zip(sorted(q_dist_func_vars, key=lambda v: v.name),
-                                   sorted(target_q_dist_func_vars, key=lambda v: v.name)):
+        for var, var_target in zip(sorted(v_dist_func_vars, key=lambda v: v.name),
+                                   sorted(target_v_dist_func_vars, key=lambda v: v.name)):
             update_target_expr.append(var_target.assign(var))
         update_target_expr = tf.group(*update_target_expr)
 
@@ -393,7 +393,7 @@ def build_dist_train(make_obs_ph, dist_func, num_actions, num_atoms, V_max, opti
         )
         update_target = U.function([], [], updates=[update_target_expr])
 
-        q_values = U.function([obs_t_input], q_dist_t)
+        q_values = U.function([obs_t_input], v_dist_t)
 
         return act_f, train, update_target, {'q_dist_values': q_values}
 

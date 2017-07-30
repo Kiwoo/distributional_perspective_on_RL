@@ -309,7 +309,7 @@ import build_graph
 
 
 def main():
-    env = gym.make("SpaceInvadersNoFrameskip-v4")
+    env = gym.make("SpaceInvadersNoFrameskip-v3")
     # Remove Scaled Float Frame wrapper, re-use if needed.
     from atari_wrappers_deprecated import wrap_dqn, ScaledFloatFrame
     env = ScaledFloatFrame(wrap_dqn(env))
@@ -321,7 +321,7 @@ def main():
     num_atoms = 51
     model = cnn_to_dist(
         convs=[(32, 8, 4), (64, 4, 2), (64, 3, 1)],
-        hiddens=[256],
+        hiddens=[256, 256],
         num_atoms=num_atoms,
         dueling=False
     )
