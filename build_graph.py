@@ -320,15 +320,18 @@ def build_dist_train(make_obs_ph, dist_func, num_actions, num_atoms, V_max, opti
 
         for j in range(num_atoms):
             l_index = l_id[:, j] + add_index
-            # j_index = 
-            p_t = tf.gather(q_dist_t_selected, l_index)
-            log_p_t = tf.log(p_t)
+            u_index = u_id[:, j] + add_index
+
+            p_tl = tf.gather(q_dist_t_selected, l_index)
+            p_tu = tf.gather(q_dist_t_selected, u_index)
+            log_p_tl = tf.log(p_tl)
+            log_p_tu = tf.log(p_tu)
             p_tp1 = q_dist_tp1_selected[:,j]
-            err = err + p_tp1 * log_p_t
+            err = err + p_tp1 * ((u[:,j] - b[:,j]) * log_p_tl + (b[:,j] - l[:,j]) * log_p_tu)
 
             # u_index = u_id[:, j]
 
-
+        err = tf.negative(err)
 
 
         weighted_error = tf.reduce_mean(err)
