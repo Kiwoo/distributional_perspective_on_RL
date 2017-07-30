@@ -211,11 +211,11 @@ def wrap_dqn(env):
     assert 'NoFrameskip' in env.spec.id
     env = EpisodicLifeEnv(env)
     env = NoopResetEnv(env, noop_max=50)
-    env = MaxAndSkipEnv(env, skip=3)
+    env = MaxAndSkipEnv(env, skip=4)
     if 'FIRE' in env.unwrapped.get_action_meanings():
         env = FireResetEnv(env)
     env = ProcessFrame84(env)
-    env = FrameStack(env, 3)
+    env = FrameStack(env, 4)
     env = ClippedRewardsWrapper(env)
     return env
 

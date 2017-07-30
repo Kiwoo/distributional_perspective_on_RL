@@ -78,11 +78,11 @@ def dist_learn(env,
           q_dist_func,
           num_atoms=51,
           V_max=10,
-          lr=5e-4,
+          lr=25e-5,
           max_timesteps=100000,
           buffer_size=50000,
-          exploration_fraction=0.1,
-          exploration_final_eps=0.02,
+          exploration_fraction=0.01,
+          exploration_final_eps=0.008,
           train_freq=1,
           batch_size=32,
           print_freq=1,
@@ -281,6 +281,7 @@ def dist_learn(env,
 
             if (checkpoint_freq is not None and t > learning_starts and
                     t % checkpoint_freq == 0):
+                print "=========================="
                 print "Error: {}".format(td_errors)
                 if saved_mean_reward is None or mean_100ep_reward > saved_mean_reward:
                     if print_freq is not None:
