@@ -124,11 +124,9 @@ def build_dist_act(make_obs_ph, dist_func, num_actions, num_atoms, V_max, scope=
 
     """
 
-    print "==================="
-
     V_min = -V_max
     delta_z = (V_max - V_min) / (num_atoms - 1)
-    print "{:.2f}".format(delta_z)
+    
 
     with tf.variable_scope(scope, reuse=reuse):
         observations_ph = U.ensure_tf_input(make_obs_ph("observation"))

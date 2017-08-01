@@ -49,14 +49,12 @@ def _cnn_to_dist(convs, hiddens, num_atoms, dueling, inpt, num_actions, scope, r
 
             for action in range(num_actions):
                 logits = dist_out[:, num_atoms * action : num_atoms * (action + 1)]
-                print "start : {}, end : {}".format(num_atoms * action, num_atoms * (action + 1))
                 prob = tf.nn.softmax(logits)
                 dists.append(prob)
 
         # print np.shape(dist[1])
 
         dist = tf.concat(dists, axis=1)
-        print np.shape(dist)
 
         return dist
 
