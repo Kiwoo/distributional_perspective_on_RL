@@ -44,7 +44,7 @@ def _cnn_to_dist(convs, hiddens, num_atoms, dueling, inpt, num_actions, scope, r
             dist_out = out
             for hidden in hiddens:
                 dist_out = layers.fully_connected(dist_out, num_outputs=hidden, activation_fn=tf.nn.relu)
-            dist_out = layers.fully_connected(dist_out, num_outputs=num_actions*num_atoms, activation_fn=tf.nn.relu)
+            dist_out = layers.fully_connected(dist_out, num_outputs=num_actions*num_atoms, activation_fn=None)
 
 
             for action in range(num_actions):

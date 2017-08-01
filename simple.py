@@ -81,8 +81,8 @@ def dist_learn(env,
           lr=25e-5,
           max_timesteps=100000,
           buffer_size=50000,
-          exploration_fraction=0.01,
-          exploration_final_eps=0.008,
+          exploration_fraction=0.05,
+          exploration_final_eps=0.01,
           train_freq=1,
           batch_size=32,
           print_freq=1,
@@ -179,19 +179,15 @@ def dist_learn(env,
         num_actions=env.action_space.n,
         num_atoms=num_atoms,
         V_max=V_max,
-        optimizer=tf.train.AdamOptimizer(learning_rate=lr),
+        optimizer=tf.train.AdamOptimizer(learning_rate=lr, epsilon = 0.01/batch_size),
         gamma=gamma,
         grad_norm_clipping=10
     )
 
-    # act, train, update_target, debug = build_train(
-    #     make_obs_ph=make_obs_ph,
-    #     q_func=q_func,
-    #     num_actions=env.action_space.n,
-    #     optimizer=tf.train.AdamOptimizer(learning_rate=lr),
-    #     gamma=gamma,
-    #     grad_norm_clipping=10
-    # )
+    print "==================================="
+    print "learning rate: {}, epsilon adam: {}".format(lr, 0.01/batch_size)
+    print "==================================="
+
     act_params = {
         'make_obs_ph': make_obs_ph,
         'q_dist_func': q_dist_func,
@@ -247,13 +243,9 @@ def dist_learn(env,
                     experience = replay_buffer.sample(batch_size, beta=beta_schedule.value(t))
                     (obses_t, actions, rewards, obses_tp1, dones, weights, batch_idxes) = experience
                 else:
-                    # print "CCCC"
                     obses_t, actions, rewards, obses_tp1, dones = replay_buffer.sample(batch_size)
                     weights, batch_idxes = np.ones_like(rewards), None
-                # print "Come1"
-                # print np.shape(obses_t), np.shape(actions), np.shape(rewards), np.shape(obses_tp1), np.shape(dones)
                 td_errors = train(obses_t, actions, rewards, obses_tp1, dones, weights)
-                # print "Loss : {}".format(td_errors)
                 if prioritized_replay:
                     new_priorities = np.abs(td_errors) + prioritized_replay_eps
                     replay_buffer.update_priorities(batch_idxes, new_priorities)

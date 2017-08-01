@@ -77,29 +77,16 @@ def q_value(q_dist, num_atoms, num_actions, V_max, delta_z):
     start = V_min
     end = V_max + delta_z
     delta = delta_z
-    # print "KKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK"
-    # print start, end, delta
     z = tf.range(start, end, delta)
 
-    # print "c1"
-    # print np.shape(z)
-    # print np.shape(q_dist)
-
     q_as = []
-    # Assume that I get proper distribution for every action.
-    
-    # Think again!!!!
 
     for action in range(num_actions):
         dist = q_dist[:, num_atoms*action: num_atoms*(action+1)]
-        # print np.shape(dist)
         q_a = tf.reduce_sum(tf.multiply(dist, z), axis = 1, keep_dims = True)
-        # print np.shape(q_a)
         q_as.append(q_a)
 
     q_values = tf.concat(q_as, axis=1)
-
-    # print np.shape(q_values)
 
     return q_values
 
@@ -332,8 +319,6 @@ def build_dist_train(make_obs_ph, dist_func, num_actions, num_atoms, V_max, opti
             log_p_tu = tf.log(p_tu)
             p_tp1 = v_dist_tp1_selected[:,j]
             err = err + p_tp1 * ((u[:,j] - b[:,j]) * log_p_tl + (b[:,j] - l[:,j]) * log_p_tu)
-
-            # u_index = u_id[:, j]
 
         err = tf.negative(err)
 
