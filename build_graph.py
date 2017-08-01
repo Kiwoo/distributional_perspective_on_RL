@@ -239,7 +239,7 @@ def build_dist_train(make_obs_ph, dist_func, num_actions, num_atoms, V_max, opti
         v_index1 = tf.range(batch_size) * tf.shape(v_dist_t)[1]
         v_index1 = tf.tile(tf.reshape(v_index1, [batch_size, 1]), [1, num_atoms])
 
-        v_index2 = act_t_ph * num_atoms # (3, 5, 7) => (3* 51, 5* 51, 7* 51)
+        v_index2 = act_t_ph * num_atoms 
         v_index2 = tf.tile(tf.reshape(v_index2, [batch_size, 1]), [1, num_atoms])
 
         v_index2 = v_index2 + tf.range(num_atoms)
@@ -301,10 +301,7 @@ def build_dist_train(make_obs_ph, dist_func, num_actions, num_atoms, V_max, opti
         l_id = tf.cast(l, tf.int32)
         u_id = tf.cast(u, tf.int32)
 
-        # u, l are float, l_id, u_id are int32
-
         v_dist_t_selected = tf.reshape(v_dist_t_selected, [-1])
-        # q_dist_tp1_selected = tf.reshape(q_dist_tp1_selected, [-1])
         add_index = tf.range(batch_size) * num_atoms
 
         err = tf.zeros([batch_size])
